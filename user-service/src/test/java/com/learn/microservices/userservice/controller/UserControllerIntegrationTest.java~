@@ -1,0 +1,96 @@
+package com.learn.microservices.userservice.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learn.microservices.userservice.dto.UserEmailDto;
+import com.learn.microservices.userservice.entity.User;
+import com.learn.microservices.userservice.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class UserControllerIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private UserEmailDto testUser;
+
+    @BeforeEach
+    public void setUp() {
+        testUser = new UserEmailDto(1L, "Ahmed", "Hassan", "test@mail.com", "1234567890", "USER", 1L, "2024-12-26", "2024-12-27", "password");
+        userRepository.save(new User(testUser));
+    }
+
+    @Test
+    public void testGetUsers_success() throws Exception {
+        mockMvc.perform(get("/users/")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].email").value("test@mail.com"));
+    }
+
+    @Test
+    public void testGetUserByEmail_success() throws Exception {
+        mockMvc.perform(get("/users/email/test@mail.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@mail.com"));
+    }
+
+    @Test
+    public void testGetUserById_success() throws Exception {
+        mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@mail.com"));
+    }
+
+    @Test
+    public void testSaveUser_success() throws Exception {
+        String userJson = objectMapper.writeValueAsString(testUser);
+
+    }
+
+    @Test
+    public void testUpdateUser_success() throws Exception {
+        mockMvc.perform(put("/users/1")
+                        .contentType("application/json")
+                        .content("{\"firstName\": \"Ahmed\", \"lastName\": \"Hassan\", \"email\": \"updated.mail@mail.com\", \"phone\": \"1234567890\", \"role\": \"USER\", \"departmentId\": 1, \"createdAt\": \"2024-12-26\", \"updatedAt\": \"2024-12-27\", \"password\": \"password\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("updated.mail@mail.com"));
+    }
+
+    @Test
+    public void testDeleteUser_success() throws Exception {
+        mockMvc.perform(delete("/users/1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testCheckUserExistsByEmail_success() throws Exception {
+        mockMvc.perform(get("/users/exists/email/test@mail.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
+    }
+
+    @Test
+    public void testCheckUserExistsByEmail_notFound() throws Exception {
+        mockMvc.perform(get("/users/exists/email/nonexistent@mail.com"))
+                .andExpect(status().isNotFound());
+    }
+}

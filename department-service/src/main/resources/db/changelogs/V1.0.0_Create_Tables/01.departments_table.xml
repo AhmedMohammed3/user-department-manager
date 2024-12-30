@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="V1.0.0_Create_Department_Table_0" author="AHassan">
+        <createTable tableName="departments">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(100)">
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+    </changeSet>
+
+    <changeSet id="V1.0.0_Department_Table_Trigger_1" author="">
+        <sql>
+            CREATE TRIGGER set_updated_at
+                BEFORE UPDATE
+                ON departments
+                FOR EACH ROW
+            BEGIN
+                SET NEW.updated_at = NOW();
+            END;
+        </sql>
+        <rollback>
+            <sql>
+                DROP TRIGGER IF EXISTS set_updated_at;
+            </sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="V1.0.0_Create_User_Table_2" author="AHassan">
+        <tagDatabase tag="V1.0.0_Create_User_Table"/>
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,9 @@
+SERVER_PORT=8888
+EUREKA_URI=http://localhost:8761/eureka
+PROFILE=dev
+
+# Eureka Properties
+EUREKA_URI=http://localhost:8761/eureka
+
+# Config Server Properties
+GIT_CONFIG_DIR=D:/Learning/Microservices/Projects/Microservices-based-projects/user-department-manager/git-config-server

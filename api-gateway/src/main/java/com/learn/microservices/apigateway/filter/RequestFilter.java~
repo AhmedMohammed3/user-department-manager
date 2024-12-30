@@ -1,0 +1,4 @@
+package com.learn.microservices.apigateway.filter;
+
+public class RequestFilter {
+}

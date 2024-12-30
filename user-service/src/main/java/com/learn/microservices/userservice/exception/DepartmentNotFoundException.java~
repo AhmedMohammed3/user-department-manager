@@ -1,0 +1,8 @@
+package com.learn.microservices.userservice.exception;
+
+public class DepartmentNotFoundException extends NotFound   Exception {
+
+    public DepartmentNotFoundException(String message) {
+        super(message);
+    }
+}

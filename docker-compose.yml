@@ -1,0 +1,110 @@
+services:
+  mysql-dbs:
+    image: mysql:latest
+    container_name: mysql-dbs
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - user-department-network
+
+  config-server:
+    image: config-server:V0.0.1-SNAPSHOT
+    build: ./config-server
+    container_name: config-server-instance-1
+    ports:
+      - "8888:8888"
+    env_file:
+      - ./config-server/docker.env
+    restart: unless-stopped
+    volumes:
+      - ./git-config-server:/app/git-config-server
+    networks:
+      - user-department-network
+
+  service-discovery:
+    image: service-discovery:V0.0.1-SNAPSHOT
+    build: ./service-discovery
+    container_name: service-discovery-instance-1
+    ports:
+      - "8761:8761"
+    env_file:
+      - ./service-discovery/docker.env
+    restart: unless-stopped
+    networks:
+      - user-department-network
+
+  api-gateway:
+    image: api-gateway:V0.0.1-SNAPSHOT
+    build: ./api-gateway
+    container_name: api-gateway-instance-1
+    ports:
+      - "8765:8765"
+    env_file:
+      - ./api-gateway/docker.env
+    restart: unless-stopped
+    networks:
+      - user-department-network
+    depends_on:
+      - service-discovery
+      - config-server
+
+  user-service:
+    image: user-service:V0.0.1-SNAPSHOT
+    build: ./user-service
+    container_name: user-service-instance-1
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./user-service/docker.env
+    restart: unless-stopped
+    networks:
+      - user-department-network
+    depends_on:
+      - service-discovery
+      - api-gateway
+      - mysql-dbs
+
+  department-service:
+    image: department-service:V0.0.1-SNAPSHOT
+    build: ./department-service
+    container_name: department-service-instance-1
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./department-service/docker.env
+    restart: unless-stopped
+    networks:
+      - user-department-network
+    depends_on:
+      - service-discovery
+      - api-gateway
+      - mysql-dbs
+
+  auth-service:
+    image: auth-service:V0.0.1-SNAPSHOT
+    build: ./authentication-service
+    container_name: auth-service-instance-1
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./authentication-service/docker.env
+    restart: unless-stopped
+    networks:
+      - user-department-network
+    depends_on:
+      - service-discovery
+      - api-gateway
+      - mysql-dbs
+      - config-server
+
+networks:
+  user-department-network:
+    driver: bridge
+
+volumes:
+  mysql-data:

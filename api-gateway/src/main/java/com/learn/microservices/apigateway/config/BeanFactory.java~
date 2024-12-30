@@ -1,0 +1,33 @@
+package com.learn.microservices.apigateway.config;
+
+import com.learn.microservices.apigateway.filter.LoggingFilter;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class BeanFactory {
+
+    private final LoggingFilter loggingFilter;
+
+    public BeanFactory(LoggingFilter loggingFilter) {
+        this.loggingFilter = loggingFilter;
+    }
+
+    @Bean
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route("user-service", r -> r
+                        .path("/users")
+                        .filters(f -> f.filters(loggingFilter, authFilter))
+                        .uri("lb://user-service"))
+                .route("department-service", r ->
+                        r.path("/departments/")
+                                .filters(f -> f.filters(requestFilter, authFilter))
+                                .uri("lb://department-service"))
+                .route("auth-server", r -> r.path("/auth/login")
+                        .uri("lb://auth-server"))
+                .build();
+    }
+}

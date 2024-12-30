@@ -1,0 +1,93 @@
+package com.learn.microservices.authservice.config;
+
+import com.learn.microservices.authservice.util.JwtUtil;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
+
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService;
+    private final List<String> supportedJWTAuthMethods = List.of("Bearer ", "");
+    private final List<String> supportedJWTAuthHeaders = List.of(
+            HttpHeaders.AUTHORIZATION,
+            "X-AUTH-TOKEN",
+            "X-AUTH-TOKEN-HEADER"
+    );
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        logger.debug("Starting JWT authentication filter for request: {}", request.getRequestURI());
+
+        String username = null;
+        String jwt = extractJWTTokenFromRequest(request);
+
+        if (jwt != null) {
+            logger.debug("JWT token extracted: {}", jwt);
+            try {
+                username = jwtUtil.extractUsername(jwt);
+                logger.debug("Extracted username from JWT: {}", username);
+            } catch (Exception e) {
+                logger.error("Error while extracting username from JWT token: {}", e.getMessage());
+            }
+        } else {
+            logger.warn("No JWT token found in the request headers.");
+        }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            logger.debug("Username found and no authentication set in the security context. Proceeding with validation.");
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (jwtUtil.validateToken(jwt, userDetails)) {
+                logger.info("JWT token is valid. Setting authentication for user: {}", username);
+                UsernamePasswordAuthenticationToken authentication =
+                        UsernamePasswordAuthenticationToken.authenticated(userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                logger.warn("JWT token is invalid for user: {}", username);
+            }
+        }
+
+        logger.debug("JWT authentication filter processing complete. Continuing the filter chain.");
+        chain.doFilter(request, response);
+    }
+
+    public String extractJWTTokenFromRequest(HttpServletRequest request) {
+        for (String header : supportedJWTAuthHeaders) {
+            String authHeader = request.getHeader(header);
+            if (authHeader != null) {
+                logger.debug("Checking header: {}", header);
+                for (String authMethod : supportedJWTAuthMethods) {
+                    if (authHeader.startsWith(authMethod)) {
+                        logger.debug("Matching auth method found: {} for header: {}", authMethod, header);
+                        return authHeader.substring(authMethod.length());
+                    }
+                }
+            } else {
+                logger.debug("Header: {} is not present in the request.", header);
+            }
+        }
+        logger.warn("No valid JWT token found in any supported headers.");
+        return null;
+    }
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="V1.0.0_Create_User_Table_0" author="AHassan">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone_number" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="role" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="department_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+    </changeSet>
+
+    <changeSet id="V1.0.0_User_Table_Trigger_1" author="">
+        <sql>
+            CREATE TRIGGER set_updated_at
+                BEFORE UPDATE
+                ON users
+                FOR EACH ROW
+            BEGIN
+                SET NEW.updated_at = NOW();
+            END;
+        </sql>
+        <rollback>
+            <sql>
+                DROP TRIGGER IF EXISTS set_updated_at;
+            </sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="V1.0.0_Create_User_Table_2" author="AHassan">
+        <tagDatabase tag="V1.0.0_Create_User_Table"/>
+    </changeSet>
+</databaseChangeLog>
