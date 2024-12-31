@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="V2.0.0_Seed_User_Table_0" author="AHassan">
+        <sql>
+            INSERT INTO users
+            (id, first_name, last_name, email, password, phone_number, `role`, department_id, created_at, updated_at)
+            VALUES(1, 'Ahmed', 'Hassan', 'email@test.com', '$2a$10$TH2ttaK1z2mo6rPA84iXUeHMR6wCsOWfmgRE.U5HKkGzoSdZTwcry', '+20123456789', 'ADMIN', 1, '2024-12-30 00:00:00', '2024-12-30 14:06:38');
+        </sql>
+        <rollback>
+            <sql>
+                DELETE FROM users where id = 1;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="V2.0.0_Seed_User_Table_1" author="AHassan">
+        <tagDatabase tag="V2.0.0_Seed_User_Table"/>
+    </changeSet>
+</databaseChangeLog>
